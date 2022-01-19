@@ -86,31 +86,36 @@ public class MultiplayerGuiMixin extends Screen {
                 if(SessionUtils.oldSession == null) SessionUtils.oldSession = ((IMixinMinecraft)this.client).getSession();
 
                 sessionId = this.tokenText.getText();
-                if(sessionId.length() <= 10) break;
 
-                token = sessionId.split(":");
-                if(token.length != 2) break;
+                if(sessionId.length() > 10) {
 
-                uuid = token[1];
-                rawJson = null;
+                    token = sessionId.split(":");
 
-                try {
+                    if (token.length == 2) {
 
-                    rawJson = (new JsonParser()).parse(new InputStreamReader((new URL("https://api.mojang.com/user/profiles/" + uuid + "/names")).openConnection().getInputStream()));
-                } catch (IOException e) {
+                        uuid = token[1];
+                        rawJson = null;
 
-                    e.printStackTrace();
+                        try {
+
+                            rawJson = (new JsonParser()).parse(new InputStreamReader((new URL("https://api.mojang.com/user/profiles/" + uuid + "/names")).openConnection().getInputStream()));
+                        } catch (IOException e) {
+
+                            e.printStackTrace();
+                        }
+
+                        if (rawJson != null && rawJson.isJsonArray()) {
+
+                            json = rawJson.getAsJsonArray();
+                            name = json.get(json.size() - 1).getAsJsonObject().get("name").getAsString();
+                            session = new Session(name, uuid, token[0], "mojang");
+
+                            ((IMixinMinecraft) this.client).setSession(session);
+
+                            Config.saveSession(session);
+                        }
+                    }
                 }
-
-                if(rawJson == null || !rawJson.isJsonArray()) break;
-
-                json = rawJson.getAsJsonArray();
-                name = json.get(json.size() - 1).getAsJsonObject().get("name").getAsString();
-                session = new Session(name, uuid, token[0], "mojang");
-
-                ((IMixinMinecraft)this.client).setSession(session);
-
-                Config.saveSession(session);
 
                 break;
 
